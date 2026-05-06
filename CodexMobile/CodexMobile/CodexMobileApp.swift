@@ -11,6 +11,7 @@ import SwiftUI
 struct CodexMobileApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @UIApplicationDelegateAdaptor(CodexMobileAppDelegate.self) private var appDelegate
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.defaultLanguage.rawValue
     @State private var codexService: CodexService
     @State private var petCompanionStore: PetCompanionStore
     @State private var petCompanionStatusStore: PetCompanionStatusStore
@@ -25,7 +26,7 @@ struct CodexMobileApp: App {
 
         let service = CodexService()
         if AppDemoMode.isEnabled {
-            service.applyDemoSeed()
+            service.applyDemoSeed(language: AppLanguage.stored())
         } else {
             service.configureNotifications()
         }
@@ -47,6 +48,7 @@ struct CodexMobileApp: App {
                 .environment(petCompanionStore)
                 .environment(petCompanionStatusStore)
                 .environment(subscriptionService)
+                .environment(\.locale, appLanguage.locale)
                 .task {
                     guard !AppDemoMode.isEnabled else { return }
                     await subscriptionService.bootstrap()
@@ -70,7 +72,16 @@ struct CodexMobileApp: App {
                     guard newPhase == .background else { return }
                     TurnCacheManager.resetAll()
                 }
+                .onChange(of: appLanguageRawValue) { _, rawValue in
+                    guard AppDemoMode.isEnabled else { return }
+                    let language = AppLanguage(rawValue: rawValue) ?? .defaultLanguage
+                    codexService.applyDemoLanguage(language)
+                }
         }
+    }
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .defaultLanguage
     }
 
     // Configures RevenueCat once at launch using the client-safe public SDK key.

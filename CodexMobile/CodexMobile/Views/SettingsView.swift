@@ -9,12 +9,14 @@ import UIKit
 
 struct SettingsView: View {
     @AppStorage("codex.appFontStyle") private var appFontStyleRawValue = AppFont.defaultStoredStyleRawValue
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.defaultLanguage.rawValue
 
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 SettingsArchivedChatsCard()
                 SettingsAppearanceCard(appFontStyle: appFontStyleBinding)
+                SettingsLanguageCard()
                 SettingsNotificationsCard()
                 SettingsGPTAccountCard()
                 SettingsSubscriptionCard()
@@ -27,7 +29,11 @@ struct SettingsView: View {
             .padding()
         }
         .font(AppFont.body())
-        .navigationTitle("Settings")
+        .navigationTitle(AppLanguageText.settingsTitle(for: appLanguage))
+    }
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .defaultLanguage
     }
 
     private var appFontStyleBinding: Binding<AppFont.Style> {
@@ -35,6 +41,36 @@ struct SettingsView: View {
             get: { AppFont.Style(rawValue: appFontStyleRawValue) ?? AppFont.defaultStyle },
             set: { appFontStyleRawValue = $0.rawValue }
         )
+    }
+}
+
+private struct SettingsLanguageCard: View {
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.defaultLanguage.rawValue
+    private let settingsAccentColor = Color(.plan)
+
+    var body: some View {
+        SettingsCard(title: AppLanguageText.languageCardTitle(for: appLanguage)) {
+            HStack {
+                Text(AppLanguageText.languagePickerTitle(for: appLanguage))
+                Spacer()
+                Picker(AppLanguageText.languagePickerTitle(for: appLanguage), selection: $appLanguageRawValue) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language.displayName).tag(language.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 180)
+                .tint(settingsAccentColor)
+            }
+
+            Text(AppLanguageText.languageFootnote(for: appLanguage))
+                .font(AppFont.caption())
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .defaultLanguage
     }
 }
 
@@ -342,20 +378,25 @@ private struct SettingsConnectionCard: View {
 
 private struct SettingsSubscriptionCard: View {
     @Environment(SubscriptionService.self) private var subscriptions
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.defaultLanguage.rawValue
     @State private var isPresentingPaywall = false
     @State private var isPresentingOfferCodeRedemption = false
 
     var body: some View {
-        SettingsCard(title: AppDemoMode.isEnabled ? "Demo Access" : "Remodex Pro") {
+        SettingsCard(
+            title: AppDemoMode.isEnabled
+                ? AppLanguageText.demoAccessTitle(for: appLanguage)
+                : AppLanguageText.proAccessTitle(for: appLanguage)
+        ) {
             HStack {
-                Text("Status")
+                Text(AppLanguageText.statusLabel(for: appLanguage))
                 Spacer()
-                Text(AppDemoMode.isEnabled ? "Demo" : (subscriptions.hasProAccess ? "Active" : "Free"))
+                Text(AppDemoMode.isEnabled ? AppLanguageText.demoStatusLabel(for: appLanguage) : (subscriptions.hasProAccess ? "Active" : "Free"))
                     .foregroundStyle(subscriptions.hasProAccess ? .green : .secondary)
             }
 
             if AppDemoMode.isEnabled {
-                Text("RevenueCat and purchase flows are retained in the project, but this open-source build runs with local demo access.")
+                Text(AppLanguageText.demoAccessDescription(for: appLanguage))
                     .font(AppFont.caption())
                     .foregroundStyle(.secondary)
             } else if subscriptions.hasProAccess {
@@ -410,6 +451,10 @@ private struct SettingsSubscriptionCard: View {
             }
             await subscriptions.bootstrap()
         }
+    }
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .defaultLanguage
     }
 }
 
@@ -982,6 +1027,7 @@ private struct SettingsArchivedChatsCard: View {
 }
 
 private struct SettingsAboutCard: View {
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.defaultLanguage.rawValue
     @State private var isShowingAbout = false
 
     var body: some View {
@@ -995,7 +1041,7 @@ private struct SettingsAboutCard: View {
                 isShowingAbout = true
             } label: {
                 settingsAccessoryRow(
-                    title: "How codex app Works",
+                    title: AppLanguageText.howCodexAppWorksTitle(for: appLanguage),
                     leading: {
                         Image(systemName: "info.circle")
                             .font(AppFont.subheadline(weight: .medium))
@@ -1054,6 +1100,10 @@ private struct SettingsAboutCard: View {
         .fullScreenCover(isPresented: $isShowingAbout) {
             AboutRemodexView()
         }
+    }
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .defaultLanguage
     }
 
     // Keeps settings rows visually consistent while allowing SF Symbols or asset icons.

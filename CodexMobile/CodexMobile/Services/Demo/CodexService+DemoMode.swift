@@ -7,7 +7,7 @@
 import Foundation
 
 extension CodexService {
-    func applyDemoSeed(now: Date = Date()) {
+    func applyDemoSeed(now: Date = Date(), language: AppLanguage = .stored()) {
         isDemoModeEnabled = true
         syncRealtimeEnabled = false
         stopSyncLoop()
@@ -64,8 +64,8 @@ extension CodexService {
         supportsThreadFork = true
         supportsTurnPagination = false
 
-        threads = sortThreads(CodexDemoSeed.threads(now: now))
-        messagesByThread = CodexDemoSeed.messages(now: now)
+        threads = sortThreads(CodexDemoSeed.threads(now: now, language: language))
+        messagesByThread = CodexDemoSeed.messages(now: now, language: language)
         let threadIDs = Set(threads.map(\.id))
         messageRevisionByThread = Dictionary(uniqueKeysWithValues: threadIDs.map { ($0, 1) })
         hydratedThreadIDs = threadIDs
@@ -80,6 +80,31 @@ extension CodexService {
         activeThreadId = CodexDemoSeed.primaryThreadID
         refreshAllThreadTimelineStates()
         updateCurrentOutput(for: CodexDemoSeed.primaryThreadID)
+    }
+
+    func applyDemoLanguage(_ language: AppLanguage, now: Date = Date()) {
+        guard isDemoModeEnabled else { return }
+
+        let localizedSeedThreads = CodexDemoSeed.threads(now: now, language: language)
+        for localizedThread in localizedSeedThreads {
+            guard let index = threadIndex(for: localizedThread.id) else { continue }
+            threads[index].title = localizedThread.title
+            threads[index].name = localizedThread.name
+            threads[index].preview = localizedThread.preview
+            threads[index].cwd = localizedThread.cwd
+            threads[index].model = localizedThread.model
+            threads[index].modelProvider = localizedThread.modelProvider
+        }
+
+        let localizedMessages = CodexDemoSeed.messages(now: now, language: language)
+        for (threadID, messages) in localizedMessages {
+            messagesByThread[threadID] = messages
+            messageRevisionByThread[threadID, default: 0] += 1
+        }
+
+        threads = sortThreads(threads)
+        refreshAllThreadTimelineStates()
+        updateCurrentOutput(for: activeThreadId ?? CodexDemoSeed.primaryThreadID)
     }
 
     @discardableResult
@@ -104,7 +129,8 @@ extension CodexService {
         messagesByThread[threadID] = CodexDemoSeed.newThreadMessages(
             threadID: threadID,
             now: now,
-            preferredProjectPath: preferredProjectPath
+            preferredProjectPath: preferredProjectPath,
+            language: .stored()
         )
         messageRevisionByThread[threadID] = 1
         hydratedThreadIDs.insert(threadID)
@@ -136,7 +162,7 @@ extension CodexService {
         let assistantMessage = CodexMessage(
             threadId: threadId,
             role: .assistant,
-            text: CodexDemoSeed.assistantReply(for: normalizedInput),
+            text: CodexDemoSeed.assistantReply(for: normalizedInput, language: .stored()),
             createdAt: now.addingTimeInterval(0.1),
             turnId: turnID,
             deliveryState: .confirmed
