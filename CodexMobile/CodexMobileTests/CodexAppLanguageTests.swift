@@ -26,6 +26,15 @@ final class CodexAppLanguageTests: XCTestCase {
         XCTAssertEqual(AppLanguage.stored(in: defaults), .chinese)
     }
 
+    func testChineseStringTableLocalizesVisibleSettingsCopy() {
+        XCTAssertEqual(AppLanguageText.localized("Settings", for: .chinese), "设置")
+        XCTAssertEqual(AppLanguageText.localized("New Chat", for: .chinese), "新聊天")
+    }
+
+    func testEnglishStringTableFallsBackToSourceCopy() {
+        XCTAssertEqual(AppLanguageText.localized("Settings", for: .english), "Settings")
+    }
+
     func testChineseDemoSeedLocalizesCoreDemoCopy() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let threads = CodexDemoSeed.threads(now: now, language: .chinese)

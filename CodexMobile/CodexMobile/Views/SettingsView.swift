@@ -461,12 +461,14 @@ private struct SettingsSubscriptionCard: View {
 // MARK: - Reusable card / button components
 
 struct SettingsCard<Content: View>: View {
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.defaultLanguage.rawValue
+
     let title: String
     @ViewBuilder let content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(title.uppercased())
+            Text(AppLanguageText.localized(title, for: appLanguage).uppercased())
                 .font(AppFont.caption(weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 4)
@@ -480,9 +482,15 @@ struct SettingsCard<Content: View>: View {
             .background(Color(.tertiarySystemFill).opacity(0.5), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
     }
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .defaultLanguage
+    }
 }
 
 struct SettingsButton: View {
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.defaultLanguage.rawValue
+
     let title: String
     var role: ButtonRole?
     var isLoading: Bool = false
@@ -501,7 +509,7 @@ struct SettingsButton: View {
                 if isLoading {
                     ProgressView()
                 } else {
-                    Text(title)
+                    Text(AppLanguageText.localized(title, for: appLanguage))
                 }
             }
             .font(AppFont.subheadline(weight: .medium))
@@ -514,6 +522,10 @@ struct SettingsButton: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .defaultLanguage
     }
 }
 
@@ -859,6 +871,7 @@ private struct SettingsGPTAccountCard: View {
 private struct SettingsBridgeVersionCard: View {
     @Environment(CodexService.self) private var codex
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.defaultLanguage.rawValue
 
     var body: some View {
         SettingsCard(title: "Bridge Version") {
@@ -982,9 +995,13 @@ private struct SettingsBridgeVersionCard: View {
         return trimmed
     }
 
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .defaultLanguage
+    }
+
     private func settingsVersionRow(title: String, value: String, valueStyle: Color) -> some View {
         HStack(spacing: 12) {
-            Text(title)
+            Text(AppLanguageText.localized(title, for: appLanguage))
             Spacer()
             Text(value)
                 .font(AppFont.mono(.subheadline))
@@ -1113,7 +1130,7 @@ private struct SettingsAboutCard: View {
     ) -> some View {
         HStack(spacing: 8) {
             leading()
-            Text(title)
+            Text(AppLanguageText.localized(title, for: appLanguage))
                 .font(AppFont.subheadline(weight: .medium))
             Spacer()
             Image(systemName: "chevron.right")
@@ -1229,10 +1246,12 @@ private struct SettingsTrustedComputerCard: View {
 }
 
 private struct SettingsStatusPill: View {
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRawValue = AppLanguage.defaultLanguage.rawValue
+
     let label: String
 
     var body: some View {
-        Text(label)
+        Text(AppLanguageText.localized(label, for: appLanguage))
             .font(AppFont.caption(weight: .semibold))
             .foregroundStyle(.secondary)
             .padding(.horizontal, 10)
@@ -1241,6 +1260,10 @@ private struct SettingsStatusPill: View {
                 Capsule(style: .continuous)
                     .fill(Color.primary.opacity(0.07))
             )
+    }
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRawValue) ?? .defaultLanguage
     }
 }
 

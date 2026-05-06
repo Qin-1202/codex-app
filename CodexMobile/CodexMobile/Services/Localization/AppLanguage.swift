@@ -43,6 +43,16 @@ enum AppLanguage: String, CaseIterable, Codable, Identifiable, Sendable {
 }
 
 enum AppLanguageText {
+    static func localized(_ key: String, for language: AppLanguage, bundle: Bundle = .main) -> String {
+        guard language != .english,
+              let path = bundle.path(forResource: language.rawValue, ofType: "lproj"),
+              let languageBundle = Bundle(path: path) else {
+            return key
+        }
+
+        return languageBundle.localizedString(forKey: key, value: key, table: nil)
+    }
+
     static func settingsTitle(for language: AppLanguage) -> String {
         switch language {
         case .english:
