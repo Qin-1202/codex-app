@@ -257,6 +257,7 @@ struct SidebarView: View {
     // MARK: - Actions
 
     private func refreshThreads() async {
+        guard !codex.isDemoModeEnabled else { return }
         guard codex.isConnected else { return }
         let startedAt = Date()
         debugSidebarLog("refreshThreads start threadCount=\(codex.threads.count)")
@@ -289,6 +290,14 @@ struct SidebarView: View {
         isCreatingThread = true
         onNewChatCreationStateChange(true)
         prepareSidebarForChatNavigation()
+        if codex.isDemoModeEnabled {
+            let thread = codex.startDemoThread(preferredProjectPath: preferredProjectPath)
+            onOpenThread(thread)
+            isCreatingThread = false
+            onNewChatCreationStateChange(false)
+            return
+        }
+
         Task { @MainActor in
             defer {
                 isCreatingThread = false
@@ -314,6 +323,14 @@ struct SidebarView: View {
         isCreatingThread = true
         onNewChatCreationStateChange(true)
         prepareSidebarForChatNavigation()
+        if codex.isDemoModeEnabled {
+            let thread = codex.startDemoThread(preferredProjectPath: preferredProjectPath)
+            onOpenThread(thread)
+            isCreatingThread = false
+            onNewChatCreationStateChange(false)
+            return
+        }
+
         Task { @MainActor in
             defer {
                 isCreatingThread = false

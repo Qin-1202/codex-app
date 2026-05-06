@@ -17,13 +17,27 @@ struct CodexMobileApp: App {
     @State private var subscriptionService: SubscriptionService
 
     init() {
-        Self.configureRevenueCatIfAvailable()
+        if AppDemoMode.isEnabled {
+            AppDemoMode.preparePersistentUIState()
+        } else {
+            Self.configureRevenueCatIfAvailable()
+        }
+
         let service = CodexService()
-        service.configureNotifications()
+        if AppDemoMode.isEnabled {
+            service.applyDemoSeed()
+        } else {
+            service.configureNotifications()
+        }
+        let subscriptionService = SubscriptionService()
+        if AppDemoMode.isEnabled {
+            subscriptionService.applyDemoAccess()
+        }
+
         _codexService = State(initialValue: service)
         _petCompanionStore = State(initialValue: PetCompanionStore())
         _petCompanionStatusStore = State(initialValue: PetCompanionStatusStore())
-        _subscriptionService = State(initialValue: SubscriptionService())
+        _subscriptionService = State(initialValue: subscriptionService)
     }
 
     var body: some Scene {
@@ -34,6 +48,7 @@ struct CodexMobileApp: App {
                 .environment(petCompanionStatusStore)
                 .environment(subscriptionService)
                 .task {
+                    guard !AppDemoMode.isEnabled else { return }
                     await subscriptionService.bootstrap()
                 }
                 .onOpenURL { url in

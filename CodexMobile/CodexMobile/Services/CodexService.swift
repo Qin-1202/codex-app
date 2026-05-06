@@ -349,6 +349,7 @@ final class CodexService {
             refreshPinnedThreadSnapshots()
         }
     }
+    var isDemoModeEnabled = false
     var isConnected = false
     var isConnecting = false
     var isInitialized = false

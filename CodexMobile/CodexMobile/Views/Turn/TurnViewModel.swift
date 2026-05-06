@@ -1149,6 +1149,24 @@ final class TurnViewModel {
             return
         }
 
+        if codex.isDemoModeEnabled {
+            let demoInput: String
+            if !payload.isEmpty {
+                demoInput = payload
+            } else if reviewSelection != nil {
+                demoInput = "Start a local demo code review."
+            } else {
+                demoInput = "Demo attachment message."
+            }
+
+            isSending = true
+            codex.appendDemoTurn(userInput: demoInput, threadId: threadID)
+            shouldAnchorToAssistantResponse = true
+            clearComposer()
+            isSending = false
+            return
+        }
+
         if let subscriptions, !subscriptions.hasAppAccess {
             codex.lastErrorMessage = "Your 5 free messages are over. Unlock Remodex Pro to keep chatting."
             return

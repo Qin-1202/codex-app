@@ -114,6 +114,16 @@ final class SubscriptionService {
         hasProAccess || hasFreeSendAccess
     }
 
+    func applyDemoAccess() {
+        bootstrapState = .ready
+        hasProAccess = true
+        freeSendCount = 0
+        isLoading = false
+        isPurchasing = false
+        isRestoring = false
+        lastErrorMessage = nil
+    }
+
     // Counts a valid send attempt for free users even if the turn later fails.
     func consumeFreeSendAttemptIfNeeded() {
         guard !hasProAccess, freeSendCount < Self.freeSendLimit else {

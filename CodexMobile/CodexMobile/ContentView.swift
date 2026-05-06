@@ -82,6 +82,12 @@ struct ContentView: View {
         rootContent
             // Only resume saved-pairing recovery after onboarding is done and the manual scanner is not in control.
             .task {
+                selectInitialThreadIfNeeded()
+                guard !codex.isDemoModeEnabled else {
+                    scheduleSidebarPrewarmIfNeeded()
+                    return
+                }
+
                 guard hasSeenOnboarding, !isShowingManualScanner else {
                     debugSidebarLog("launch task skipped onboardingSeen=\(hasSeenOnboarding) manualScanner=\(isShowingManualScanner)")
                     return
@@ -151,6 +157,12 @@ struct ContentView: View {
                 codex.setForegroundState(phase != .background)
                 if phase == .active {
                     Task {
+                        guard !codex.isDemoModeEnabled else {
+                            selectInitialThreadIfNeeded()
+                            scheduleSidebarPrewarmIfNeeded()
+                            return
+                        }
+
                         async let subscriptionRefresh: Void = subscriptions.refreshCustomerInfoSilently()
 
                         guard hasSeenOnboarding, !isShowingManualScanner else {
@@ -179,8 +191,10 @@ struct ContentView: View {
                 debugSidebarLog("connection changed wasConnected=\(wasConnected) isConnected=\(isNowConnected)")
                 if !wasConnected, isNowConnected {
                     resetSavedMacWakeRecoveryState()
-                    Task {
-                        await codex.requestNotificationPermissionOnFirstLaunchIfNeeded()
+                    if !codex.isDemoModeEnabled {
+                        Task {
+                            await codex.requestNotificationPermissionOnFirstLaunchIfNeeded()
+                        }
                     }
                     scheduleSidebarPrewarmIfNeeded()
                 }
@@ -755,6 +769,10 @@ struct ContentView: View {
         selectedThread = thread
         codex.activeThreadId = thread.id
         codex.markThreadAsViewed(thread.id)
+        guard !codex.isDemoModeEnabled else {
+            return
+        }
+
         Task { @MainActor in
             do {
                 let restoredThread = try await codex.restorePinnedThreadIfNeeded(threadId: thread.id)
@@ -1358,6 +1376,11 @@ struct ContentView: View {
     }
 
     private func startNewThreadFromMissingNotificationAlert() async {
+        if codex.isDemoModeEnabled {
+            selectedThread = codex.startDemoThread()
+            return
+        }
+
         do {
             let thread = try await codex.startThread()
             selectedThread = thread
@@ -1428,6 +1451,19 @@ struct ContentView: View {
            let first = threads.first {
             selectedThread = first
         }
+    }
+
+    private func selectInitialThreadIfNeeded() {
+        guard selectedThread == nil else { return }
+
+        if let activeThreadId = codex.activeThreadId,
+           let activeThread = codex.threads.first(where: { $0.id == activeThreadId }) {
+            selectedThread = activeThread
+            return
+        }
+
+        selectedThread = codex.threads.first
+        codex.activeThreadId = selectedThread?.id
     }
 }
 

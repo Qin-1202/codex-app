@@ -346,15 +346,19 @@ private struct SettingsSubscriptionCard: View {
     @State private var isPresentingOfferCodeRedemption = false
 
     var body: some View {
-        SettingsCard(title: "Remodex Pro") {
+        SettingsCard(title: AppDemoMode.isEnabled ? "Demo Access" : "Remodex Pro") {
             HStack {
                 Text("Status")
                 Spacer()
-                Text(subscriptions.hasProAccess ? "Active" : "Free")
+                Text(AppDemoMode.isEnabled ? "Demo" : (subscriptions.hasProAccess ? "Active" : "Free"))
                     .foregroundStyle(subscriptions.hasProAccess ? .green : .secondary)
             }
 
-            if subscriptions.hasProAccess {
+            if AppDemoMode.isEnabled {
+                Text("RevenueCat and purchase flows are retained in the project, but this open-source build runs with local demo access.")
+                    .font(AppFont.caption())
+                    .foregroundStyle(.secondary)
+            } else if subscriptions.hasProAccess {
                 Text("Your Pro access is active. You can still restore purchases or manage the purchase from Apple.")
                     .font(AppFont.caption())
                     .foregroundStyle(.secondary)
@@ -364,21 +368,23 @@ private struct SettingsSubscriptionCard: View {
                     .foregroundStyle(.secondary)
             }
 
-            SettingsButton(subscriptions.hasProAccess ? "View Pro" : "Upgrade to Pro") {
-                isPresentingPaywall = true
-            }
-
-            SettingsButton("Redeem Code") {
-                isPresentingOfferCodeRedemption = true
-            }
-            .disabled(subscriptions.isPurchasing || subscriptions.isRestoring)
-
-            SettingsButton(subscriptions.isRestoring ? "Restoring..." : "Restore Purchases", isLoading: subscriptions.isRestoring) {
-                Task {
-                    await subscriptions.restorePurchases()
+            if !AppDemoMode.isEnabled {
+                SettingsButton(subscriptions.hasProAccess ? "View Pro" : "Upgrade to Pro") {
+                    isPresentingPaywall = true
                 }
+
+                SettingsButton("Redeem Code") {
+                    isPresentingOfferCodeRedemption = true
+                }
+                .disabled(subscriptions.isPurchasing || subscriptions.isRestoring)
+
+                SettingsButton(subscriptions.isRestoring ? "Restoring..." : "Restore Purchases", isLoading: subscriptions.isRestoring) {
+                    Task {
+                        await subscriptions.restorePurchases()
+                    }
+                }
+                .disabled(subscriptions.isPurchasing)
             }
-            .disabled(subscriptions.isPurchasing)
 
             if let error = subscriptions.lastErrorMessage, !error.isEmpty {
                 Text(error)
@@ -399,7 +405,7 @@ private struct SettingsSubscriptionCard: View {
             }
         }
         .task {
-            guard subscriptions.bootstrapState == .idle else {
+            guard !AppDemoMode.isEnabled, subscriptions.bootstrapState == .idle else {
                 return
             }
             await subscriptions.bootstrap()
@@ -989,7 +995,7 @@ private struct SettingsAboutCard: View {
                 isShowingAbout = true
             } label: {
                 settingsAccessoryRow(
-                    title: "How Remodex Works",
+                    title: "How codex app Works",
                     leading: {
                         Image(systemName: "info.circle")
                             .font(AppFont.subheadline(weight: .medium))
